@@ -1,46 +1,74 @@
-![Banner image](https://user-images.githubusercontent.com/10284570/173569848-c624317f-42b1-45a6-ab09-f0ea3c247648.png)
+# n8n Community Node: HiBob
 
-# n8n-nodes-starter
+This is an n8n community node for interacting with the HiBob API. HiBob is a modern HR platform that helps fast-growing companies manage their people and culture.
 
-This repo contains example nodes to help you get started building your own custom integrations for [n8n](https://n8n.io). It includes the node linter and other dependencies.
+This node allows you to automate HR workflows by connecting HiBob to other applications and services within your n8n workflows.
 
-To make your custom node available to the community, you must create it as an npm package, and [submit it to the npm registry](https://docs.npmjs.com/packages-and-modules/contributing-packages-to-the-registry).
+## Features
+
+*   **Get Metadata**:
+    *   Retrieve all employee fields.
+*   *(More operations and resources can be added here as the node is developed)*
 
 ## Prerequisites
 
-You need the following installed on your development machine:
+*   An active HiBob account.
+*   A Service User ID and Token from your HiBob account with the necessary permissions for the API actions you intend to perform.
 
-* [git](https://git-scm.com/downloads)
-* Node.js and pnpm. Minimum version Node 20. You can find instructions on how to install both using nvm (Node Version Manager) for Linux, Mac, and WSL [here](https://github.com/nvm-sh/nvm). For Windows users, refer to Microsoft's guide to [Install NodeJS on Windows](https://docs.microsoft.com/en-us/windows/dev-environment/javascript/nodejs-on-windows).
-* Install n8n with:
-  ```
-  npm install n8n -g
-  ```
-* Recommended: follow n8n's guide to [set up your development environment](https://docs.n8n.io/integrations/creating-nodes/build/node-development-environment/).
+## Installation
 
-## Using this starter
+Follow the [n8n community node installation guide](https://docs.n8n.io/integrations/community-nodes/installation/) to install this node.
 
-These are the basic steps for working with the starter. For detailed guidance on creating and publishing nodes, refer to the [documentation](https://docs.n8n.io/integrations/creating-nodes/).
+1.  Go to **Settings > Community Nodes**.
+2.  Select **Install**.
+3.  Enter `n8n-nodes-hibob` in the **Enter npm package name** field.
+4.  Agree to the risks of using community nodes.
+5.  Click **Install**.
 
-1. [Generate a new repository](https://github.com/n8n-io/n8n-nodes-starter/generate) from this template repository.
-2. Clone your new repo:
-   ```
-   git clone https://github.com/<your organization>/<your-repo-name>.git
-   ```
-3. Run `npm i` to install dependencies.
-4. Open the project in your editor.
-5. Browse the examples in `/nodes` and `/credentials`. Modify the examples, or replace them with your own nodes.
-6. Update the `package.json` to match your details.
-7. Run `npm lint` to check for errors or `npm lintfix` to automatically fix errors when possible.
-8. Test your node locally. Refer to [Run your node locally](https://docs.n8n.io/integrations/creating-nodes/test/run-node-locally/) for guidance.
-9. Replace this README with documentation for your node. Use the [README_TEMPLATE](README_TEMPLATE.md) to get started.
-10. Update the LICENSE file to use your details.
-11. [Publish](https://docs.npmjs.com/packages-and-modules/contributing-packages-to-the-registry) your package to npm.
+After installing the node, you can use it in your n8n workflows.
 
-## More information
+## Configuration
 
-Refer to our [documentation on creating nodes](https://docs.n8n.io/integrations/creating-nodes/) for detailed information on building your own nodes.
+To use this node, you need to configure HiBob API credentials in n8n:
+
+1.  In your n8n workflow, add the "HiBob" node.
+2.  In the node's properties panel, click on the "Credential" dropdown.
+3.  Select "Create New".
+4.  Enter a **Credential Name**.
+5.  Fill in the **Service User ID** and **Service User Token** obtained from your HiBob account.
+6.  Click **Save**.
+
+## Usage
+
+Once the node is configured, you can use it in your workflows:
+
+1.  Add the HiBob node to your workflow.
+2.  Select the desired **Resource** (e.g., "Metadata").
+3.  Select the **Operation** you want to perform (e.g., "Get all employee fields").
+4.  Connect other nodes to process the data returned by the HiBob API.
+
+### Example: Get All Employee Fields
+
+*   **Resource**: `Metadata`
+*   **Operation**: `Get all employee fields`
+
+This operation will retrieve a list of all available employee fields in your HiBob instance.
+
+## Resources
+
+*   [n8n Community Support Forum](https://community.n8n.io/)
+*   [HiBob API Documentation](https://apidocs.hibob.com/) (Refer to the HiBob documentation for details on API endpoints and permissions)
+
+## Compatibility
+
+This node has been tested with n8n version `1.0.0` and later.
+
+## Contributing
+
+Contributions to this node are welcome! Please refer to the n8n [community node development guide](https://docs.n8n.io/integrations/creating-nodes/) for more information on how to contribute.
+
+If you find any bugs or have a feature request, please open an issue on the GitHub repository.
 
 ## License
 
-[MIT](https://github.com/n8n-io/n8n-nodes-starter/blob/master/LICENSE.md)
+This n8n community node is [MIT Licensed](LICENSE.md).
