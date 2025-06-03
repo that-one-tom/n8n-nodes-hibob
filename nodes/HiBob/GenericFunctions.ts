@@ -17,11 +17,7 @@ export async function hiBobApiRequest(
 	query?: IDataObject,
 	dataKey?: string,
 ): Promise<any> {
-	const credentials = await this.getCredentials('HiBobApi');
 	const baseUrl = 'https://api.hibob.com';
-
-	// TODO: Remove before commit
-	this.logger.debug('Credentials:', credentials);
 
 	const options: IRequestOptions = {
 		headers: {
@@ -38,7 +34,7 @@ export async function hiBobApiRequest(
 		options.body = body;
 	}
 
-	try {
+            	try {
 		const responseData = await this.helpers.requestWithAuthentication.call(
 			this,
 			'HiBobApi',
@@ -50,9 +46,9 @@ export async function hiBobApiRequest(
 		}
 
 		if (dataKey === undefined) {
-			return responseData;
+            return responseData;
 		} else {
-			return responseData[dataKey];
+            return responseData[dataKey] as IDataObject;
 		}
 	} catch (error) {
 		throw new NodeApiError(this.getNode(), error as JsonObject);

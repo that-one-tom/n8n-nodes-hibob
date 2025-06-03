@@ -5,7 +5,8 @@ import {
 	ILoadOptionsFunctions, // Added for programmatic options loading
 	INodePropertyOptions,
 	IExecuteFunctions,
-	INodeExecutionData, // Added for programmatic options loading
+	INodeExecutionData,
+	IDataObject, // Added for programmatic options loading
 } from 'n8n-workflow';
 
 import { hiBobApiRequest } from './GenericFunctions';
@@ -19,7 +20,7 @@ export class HiBob implements INodeType {
 		icon: 'file:hibob.png',
 		group: ['output'],
 		version: 1,
-		subtitle: '={{$parameter["operation"]', // '": " + $parameter["resource"]}}',
+		subtitle: '={{$parameter["operation"]',
 		description: 'Exchange data with the HiBob API',
 		defaults: {
 			name: 'HiBob',
@@ -101,7 +102,6 @@ export class HiBob implements INodeType {
 				type: 'multiOptions',
 				default: [],
 				typeOptions: {
-					// Changed from declarative loadOptions to programmatic loadOptionsMethod
 					loadOptionsMethod: 'loadPeopleFields',
 				},
 				placeholder: 'Add Field',
@@ -118,16 +118,8 @@ export class HiBob implements INodeType {
 	methods = {
 		loadOptions: {
 			async loadPeopleFields(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-
 				let responseData;
-
 				responseData = await hiBobApiRequest.call(this, 'GET', '/v1/company/people/fields');
-
-				this.logger.debug('Response Data:', responseData);
-
-				// Assuming the API returns an array of objects like { id: string, name: string }
-				// If the actual data is nested (e.g., responseData.data or responseData.fields),
-				// you'll need to adjust the mapping accordingly.
 				if (Array.isArray(responseData)) {
 					return responseData.map((field: { id: string; name: string }) => ({
 						name: field.name,
@@ -140,39 +132,59 @@ export class HiBob implements INodeType {
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
-		const items = this.getInputData();
-		const returnData: INodeExecutionData[] = [];
-		const length = items.length;
+        const items = this.getInputData();
+        let returnData: IDataObject[] = [];
 
+        for (let i = 0; i < items.length; i++) {
+            try {
+                const resource = this.getNodeParameter('resource', i) as string;
+                const operation = this.getNodeParameter('operation', i) as string;
 
-		for (let i = 0; i < length; i++) {
-			try {
-				const resource = this.getNodeParameter('resource', i) as string;
-				const operation = this.getNodeParameter('operation', i) as string;
+                let responseData;
 
-				let responseData;
+                if (resource === 'metadata' && operation === 'getAllEmployeeFields') {
+                    // --------------------------------
+                    // metadata: getAllEmployeeFields
+                    // --------------------------------
+                    responseData = await hiBobApiRequest.call(this, 'GET', '/v1/company/people/fields');
+                } else if (resource === 'people' && operation === 'searchForEmployees') {
+                    // --------------------------------
+                    // people: searchForEmployees
+                    // --------------------------------
+                    const fields = this.getNodeParameter('fields', i) as string[];
+                    responseData = await hiBobApiRequest.call(this, 'POST', '/v1/people/search', {
+                        fields,
+                        showInactive: false,
+                    }, undefined, 'employees');
+                }
 
-				if (resource === 'metadata' && operation === 'getAllEmployeeFields') {
-					// --------------------------------
-					// metadata: getAllEmployeeFields
-					// --------------------------------
-					responseData = await hiBobApiRequest.call(this, 'GET', '/v1/company/people/fields');
-				} else if (resource === 'people' && operation === 'searchForEmployees') {
-					// --------------------------------
-					// people: searchForEmployees
-					// --------------------------------
-					const fields = this.getNodeParameter('fields', i) as string[];
-					responseData = await hiBobApiRequest.call(this, 'POST', '/v1/people/search', {
-						fields,
-						showInactive: false,
-					});
-				}
-				returnData.push({ json: responseData });
-			} catch (error) {
-				throw error;
-			}
-		}
+                if (responseData !== undefined && responseData !== null) {
+                    if (Array.isArray(responseData)) {
+                        // If responseData is an array, create an item for each element
+                        for (const singleResult of responseData) {
+                            returnData.push({
+                                json: singleResult as IDataObject,
+                                pairedItem: { item: i },
+                            });
+                        }
+                    } else {
+                        // If responseData is not an array, push it as a single item
+                        returnData.push({
+                            json: responseData as IDataObject,
+                            pairedItem: { item: i },
+                        });
+                    }
+                }
+            } catch (error) {
+                // If an error occurs, rethrow it to be caught by n8n
+                if (this.continueOnFail()) {
+                    returnData.push({ json: { error: (error as Error).message }, pairedItem: { item: i } });
+                    continue;
+                }
+                throw error;
+            }
+        }
 
-		return [returnData];
-	};
+        return [this.helpers.returnJsonArray(returnData)];
+    };
 }
