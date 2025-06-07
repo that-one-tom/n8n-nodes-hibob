@@ -10,7 +10,7 @@ export class HiBobApi implements ICredentialType {
 	name = 'HiBobApi';
 	displayName = 'HiBob API';
 	documentationUrl =
-		'https://docs.n8n.io/integrations/creating-nodes/build/declarative-style-node/';
+		'https://apidocs.hibob.com/docs/api-service-users';
 	properties: INodeProperties[] = [
 		{
 			displayName: 'Service User ID',

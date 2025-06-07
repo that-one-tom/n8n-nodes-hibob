@@ -112,6 +112,64 @@ export class HiBob implements INodeType {
 					},
 				},
 			},
+			{
+				displayName: 'Additional Settings',
+				name: 'additionalSettings',
+				type: 'collection',
+				default: {},
+				placeholder: 'Add Setting',
+				displayOptions: {
+					show: {
+						resource: ['people'],
+						operation: ['searchForEmployees'],
+					},
+				},
+				options: [
+					{
+						// eslint-disable-next-line n8n-nodes-base/node-param-display-name-wrong-for-dynamic-multi-options
+						displayName: 'Human Readable',
+						description:
+							'A flag that determines the data format to be returned in the response payload',
+						name: 'humanReadable',
+						type: 'options',
+						options: [
+							{
+								name: 'Append',
+								value: 'APPEND',
+								description: 'Append the human readable data to the response',
+							},
+							{
+								name: 'Replace',
+								value: 'REPLACE',
+								description:
+									'Supply only humanReadable values in the JSON response instead of machine-readable values',
+							},
+						],
+						default: 'APPEND',
+					},
+					{
+						displayName: 'Show Inactive',
+						// eslint-disable-next-line n8n-nodes-base/node-param-description-boolean-without-whether
+						description: 'Defines whether response should include inactive employees',
+						name: 'showInactive',
+						type: 'boolean',
+						default: false,
+					},
+					{
+						displayName: 'Filter',
+						description:
+							'An optional filter based on a field and a condition to filter the results. Use this to filter which employees to return. If not provided, will return data of all the employees that can be accessed by this service user. More information on this parameter is available <a href="https://apidocs.hibob.com/reference/post_people-search">in the HiBob API reference</a>',
+						name: 'filter',
+						type: 'json',
+						default: `{
+  "fieldPath": "root.email",
+  "operator": "equals",
+  "values": [
+    "tom@n8n.io"
+  ]
+}`,					}
+				],
+			},
 		],
 	};
 
@@ -132,59 +190,75 @@ export class HiBob implements INodeType {
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
-        const items = this.getInputData();
-        let returnData: IDataObject[] = [];
+		const items = this.getInputData();
+		let returnData: IDataObject[] = [];
 
-        for (let i = 0; i < items.length; i++) {
-            try {
-                const resource = this.getNodeParameter('resource', i) as string;
-                const operation = this.getNodeParameter('operation', i) as string;
+		for (let i = 0; i < items.length; i++) {
+			try {
+				const resource = this.getNodeParameter('resource', i) as string;
+				const operation = this.getNodeParameter('operation', i) as string;
 
-                let responseData;
+				let responseData;
 
-                if (resource === 'metadata' && operation === 'getAllEmployeeFields') {
-                    // --------------------------------
-                    // metadata: getAllEmployeeFields
-                    // --------------------------------
-                    responseData = await hiBobApiRequest.call(this, 'GET', '/v1/company/people/fields');
-                } else if (resource === 'people' && operation === 'searchForEmployees') {
-                    // --------------------------------
-                    // people: searchForEmployees
-                    // --------------------------------
-                    const fields = this.getNodeParameter('fields', i) as string[];
-                    responseData = await hiBobApiRequest.call(this, 'POST', '/v1/people/search', {
-                        fields,
-                        showInactive: false,
-                    }, undefined, 'employees');
-                }
+				const additionalSettings = this.getNodeParameter('additionalSettings', i, {}) as { humanReadable?: string };
+				this.logger.debug(`Additional Settings: ${JSON.stringify(additionalSettings)}`);
 
-                if (responseData !== undefined && responseData !== null) {
-                    if (Array.isArray(responseData)) {
-                        // If responseData is an array, create an item for each element
-                        for (const singleResult of responseData) {
-                            returnData.push({
-                                json: singleResult as IDataObject,
-                                pairedItem: { item: i },
-                            });
-                        }
-                    } else {
-                        // If responseData is not an array, push it as a single item
-                        returnData.push({
-                            json: responseData as IDataObject,
-                            pairedItem: { item: i },
-                        });
-                    }
-                }
-            } catch (error) {
-                // If an error occurs, rethrow it to be caught by n8n
-                if (this.continueOnFail()) {
-                    returnData.push({ json: { error: (error as Error).message }, pairedItem: { item: i } });
-                    continue;
-                }
-                throw error;
-            }
-        }
+				if (resource === 'metadata' && operation === 'getAllEmployeeFields') {
+					// --------------------------------
+					// metadata: getAllEmployeeFields
+					// --------------------------------
+					responseData = await hiBobApiRequest.call(this, 'GET', '/v1/company/people/fields');
+				} else if (resource === 'people' && operation === 'searchForEmployees') {
+					// --------------------------------
+					// people: searchForEmployees
+					// --------------------------------
+					const fields = this.getNodeParameter('fields', i) as string[];
+					const humanReadable = this.getNodeParameter('additionalSettings.humanReadable', i, null) as string;
+					const showInactive = this.getNodeParameter('additionalSettings.showInactive', i, false) as boolean;
+					const filterString = this.getNodeParameter('additionalSettings.filter', i, null) as string | null;
+					const filter = filterString ? JSON.parse(filterString) : null;
+					responseData = await hiBobApiRequest.call(
+						this,
+						'POST',
+						'/v1/people/search',
+						{
+							fields: fields,
+							showInactive: showInactive,
+							humanReadable: humanReadable,
+							filters: filter ? [filter] : null,
+						},
+						undefined,
+						'employees',
+					);
+				}
 
-        return [this.helpers.returnJsonArray(returnData)];
-    };
+				if (responseData !== undefined && responseData !== null) {
+					if (Array.isArray(responseData)) {
+						// If responseData is an array, create an item for each element
+						for (const singleResult of responseData) {
+							returnData.push({
+								json: singleResult as IDataObject,
+								pairedItem: { item: i },
+							});
+						}
+					} else {
+						// If responseData is not an array, push it as a single item
+						returnData.push({
+							json: responseData as IDataObject,
+							pairedItem: { item: i },
+						});
+					}
+				}
+			} catch (error) {
+				// If an error occurs, rethrow it to be caught by n8n
+				if (this.continueOnFail()) {
+					returnData.push({ json: { error: (error as Error).message }, pairedItem: { item: i } });
+					continue;
+				}
+				throw error;
+			}
+		}
+
+		return [this.helpers.returnJsonArray(returnData)];
+	}
 }

@@ -6,14 +6,19 @@ This node allows you to automate HR workflows by connecting HiBob to other appli
 
 ## Features
 
-*   **Get Metadata**:
-    *   Retrieve all employee fields.
-*   *(More operations and resources can be added here as the node is developed)*
+*   **Metadata Resource**:
+    *   **Get All Employee Fields**: Retrieve metadata about all available employee fields.
+*   **People Resource**:
+    *   **Search for Employees**: Search and retrieve employee data.
+        *   Optionally specify which employee fields to return.
+        *   Control the format of human-readable values in the response (append to or replace machine-readable values).
+        *   Optionally include inactive employees in the search results.
+        *   Filter employees based on specific field values and conditions using a JSON filter.
 
 ## Prerequisites
 
 *   An active HiBob account.
-*   A Service User ID and Token from your HiBob account with the necessary permissions for the API actions you intend to perform.
+*   A Service User ID and Token from your HiBob account with the necessary permissions for the API actions you intend to perform. (Refer to [HiBob API Service Users Documentation](https://apidocs.hibob.com/docs/api-service-users) for more details on permissions).
 
 ## Installation
 
@@ -43,9 +48,10 @@ To use this node, you need to configure HiBob API credentials in n8n:
 Once the node is configured, you can use it in your workflows:
 
 1.  Add the HiBob node to your workflow.
-2.  Select the desired **Resource** (e.g., "Metadata").
-3.  Select the **Operation** you want to perform (e.g., "Get all employee fields").
-4.  Connect other nodes to process the data returned by the HiBob API.
+2.  Select the desired **Resource** (e.g., "People").
+3.  Select the **Operation** you want to perform (e.g., "Search for Employees").
+4.  Configure any additional parameters for the operation.
+5.  Connect other nodes to process the data returned by the HiBob API.
 
 ### Example: Get All Employee Fields
 
@@ -54,14 +60,34 @@ Once the node is configured, you can use it in your workflows:
 
 This operation will retrieve a list of all available employee fields in your HiBob instance.
 
+### Example: Search for Employees
+
+*   **Resource**: `People`
+*   **Operation**: `Search for Employees`
+*   **Fields**: (Optional) Select specific fields like `root.id`, `root.displayName`, `work.department`. If left empty, a default set of fields is returned.
+*   **Additional Settings**:
+    *   **Human Readable**: `Append` (default) or `Replace`.
+    *   **Show Inactive**: `false` (default) or `true`.
+    *   **Filter**: (Optional) Provide a JSON filter, e.g.:
+        ```json
+        {
+            "fieldPath": "root.email",
+            "operator": "equals",
+            "values": [
+                "tom@n8n.io"
+            ]
+        }
+        ```
+This operation will search for employees, potentially filtered by department, and return the specified fields.
+
 ## Resources
 
 *   [n8n Community Support Forum](https://community.n8n.io/)
-*   [HiBob API Documentation](https://apidocs.hibob.com/) (Refer to the HiBob documentation for details on API endpoints and permissions)
+*   [HiBob API Documentation](https://apidocs.hibob.com/) (Refer to the HiBob documentation for details on API endpoints, filters, and permissions)
 
 ## Compatibility
 
-This node has been tested with n8n version `1.0.0` and later.
+This node has been tested with n8n version `1.94.1`, but should also work with later versions.
 
 ## Contributing
 
